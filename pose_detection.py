@@ -6,6 +6,7 @@ from poses.tpose import TPose
 from poses.skyward import Skyward
 from poses.bucket import Bucket
 from poses.pose import Pose
+from pyzed import sl
 
 class PoseType(enumerate):
     NONE = -1

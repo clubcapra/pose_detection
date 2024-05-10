@@ -22,6 +22,12 @@
    This sample shows how to detect a human bodies and draw their 
    modelised skeleton in an OpenGL window
 """
+from __future__ import annotations
+from abc import ABCMeta, abstractmethod
+import os
+from pathlib import Path
+import time
+from typing import Union
 import cv2
 import sys
 import pyzed.sl as sl
@@ -31,6 +37,8 @@ import numpy as np
 import argparse
 import csv
 from pose_detection import PoseDectection, PoseType
+from json_export import 
+
 
 def parse_args(init):
     if len(opt.input_svo_file)>0 and opt.input_svo_file.endswith(".svo"):
@@ -68,8 +76,6 @@ def parse_args(init):
         print("[Sample] No valid resolution entered. Using default")
     else : 
         print("[Sample] Using default resolution")
-
-
 
 def main():
     print("Running Body Tracking sample ... Press 'q' to quit, or 'm' to pause or restart")
@@ -151,8 +157,10 @@ def main():
 
                 # Write out keypoints to csv file
                 for body_index, body in enumerate(bodies.body_list):
+                    json_export
                     angles = pose_detector.getAnglesFromBodyData(body)
                     writer.writerow({'Right shoulder': angles[0], 'Right elbow': angles[1], 'Left shoulder': angles[2], 'Left elbow': angles[3], 'Label': pose})
+
 
                 # Update GL view
                 viewer.update_view(image, bodies) 
