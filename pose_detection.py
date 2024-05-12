@@ -1,6 +1,5 @@
 from typing import Collection, Dict
-from vector2d import Vector2D
-from math2d import getAngleBetweenVectors, getVectorFromPoints
+from math3d import getAngleBetweenVectors, getVectorFromPoints
 from constants import VECTOR_COUPLES, KEYPOINT_COUPLES, TPOSE_ANGLES, SKYWARD_ANGLES, BUCKET_ANGLES
 from poses.tpose import TPose
 from poses.skyward import Skyward
@@ -30,7 +29,7 @@ class PoseDectection:
         # Start by getting vectors of interest
         vectors = self.getVectors(bodyData)
 
-        angles = self.getAngles(vectors)
+        angles = self.getAnglesFromVectors(vectors)
 
         # Find matching pose for found angles
         tposeDetector = TPose()
