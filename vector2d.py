@@ -7,7 +7,7 @@ class Vector2D:
     
     def getNorm(self) -> float:
 
-        return sqrt(pow(self.dx, 2) + pow(self.dy, 2))
+        return sqrt(pow(self.dx, 2) + pow(self.dy, 2) + pow(self.dz, 2))
     
 
 
