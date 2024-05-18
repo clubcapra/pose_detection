@@ -17,3 +17,5 @@ TPOSE_ANGLES = [0, 10, 0, 10]
 SKYWARD_ANGLES = [90, 0, 90, 0]
 
 BUCKET_ANGLES = [0, 105, 0, 105]
+
+DATASET_PATH = "./dataset"
