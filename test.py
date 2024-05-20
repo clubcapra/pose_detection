@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 import seaborn as sn
 import matplotlib.pyplot as plt
+import os
 
 directory = "dataset/"
 X, y = process_dataset(directory)
@@ -38,7 +39,8 @@ model.compile(
 # Training
 model.fit(X_train, y_train, epochs=50, verbose=True, validation_split=0.2)
 # Save resulting weights
-model.save_weights("weights/weights.weights.h5", overwrite=True)
+trainings = os.listdir('weights/')
+model.save_weights(f"weights/weights{len(trainings)}.weights.h5", overwrite=True)
 
 # Make prediction (we do this instead of evaluate to have access to result vector)
 y_pred = model.predict(X_test)
@@ -52,5 +54,6 @@ classes = ["none", "tpose", "bucket", "skyward"]
 df_cfm = pd.DataFrame(cfm, index = classes, columns = classes)
 plt.figure(figsize = (10,7))
 cfm_plot = sn.heatmap(df_cfm, annot=True, fmt=".1f")
-cfm_plot.figure.savefig("metrics/cfm.png")
+nb_cfm = os.listdir('metrics/cfm/')
+cfm_plot.figure.savefig(f"metrics/cfm/cfm{len(nb_cfm)}.png")
 
