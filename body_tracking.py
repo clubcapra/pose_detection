@@ -30,7 +30,7 @@ import cv_viewer.tracking_viewer as cv_viewer
 import numpy as np
 import argparse
 import csv
-from pose_detection import PoseDectection, PoseType
+from logic.pose_detection import PoseDectection, PoseType
 
 def parse_args(init):
     if len(opt.input_svo_file)>0 and opt.input_svo_file.endswith(".svo"):

@@ -1,5 +1,5 @@
 import numpy as np
-from vector2d import Vector2D
+from logic.vector2d import Vector2D
 from math import acos, degrees
 
 

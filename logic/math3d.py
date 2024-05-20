@@ -1,4 +1,4 @@
-from vector3d import Vector3D
+from logic.vector3d import Vector3D
 from math import acos, degrees
 
 

@@ -1,5 +1,5 @@
 from typing import Collection, Dict
-from math3d import getAngleBetweenVectors, getVectorFromPoints
+from logic.math3d import getAngleBetweenVectors, getVectorFromPoints
 from constants import (
     VECTOR_COUPLES,
     KEYPOINT_COUPLES,
