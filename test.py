@@ -10,6 +10,7 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sn
 import matplotlib.pyplot as plt
 import os
+from utils.metrics import generateLossGraph
 
 directory = "dataset/"
 X, y = process_dataset(directory)
@@ -37,10 +38,13 @@ model.compile(
     optimizer=keras.optimizers.Adam(learning_rate=0.001),
 )
 # Training
-model.fit(X_train, y_train, epochs=50, verbose=True, validation_split=0.2)
+history = model.fit(X_train, y_train, epochs=50, verbose=True, validation_split=0.2)
 # Save resulting weights
 trainings = os.listdir('weights/')
 model.save_weights(f"weights/weights{len(trainings)}.weights.h5", overwrite=True)
+
+# Create loss graph (exported in metrics/loss/)
+generateLossGraph(history)
 
 # Make prediction (we do this instead of evaluate to have access to result vector)
 y_pred = model.predict(X_test)
