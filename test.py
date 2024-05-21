@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import os
 from utils.metrics import generateLossGraph
 
+EPOCHS = 200
+
 directory = "dataset/"
 X, y = process_dataset(directory)
 
@@ -28,23 +30,28 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Get one hot vector for training
 y_train = convertToOneHot(y_train, 4)
+y_test_oh = convertToOneHot(y_test, 4)
 
 # Initialize model
 model = MLP()
 # Compile model
 model.compile(
     loss=keras.losses.CategoricalCrossentropy(),
-    metrics=[keras.metrics.CategoricalCrossentropy()],
+    metrics=[keras.metrics.CategoricalAccuracy()],
     optimizer=keras.optimizers.Adam(learning_rate=0.001),
 )
 # Training
-history = model.fit(X_train, y_train, epochs=50, verbose=True, validation_split=0.2)
+history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
 # Save resulting weights
 trainings = os.listdir('weights/')
 model.save_weights(f"weights/weights{len(trainings)}.weights.h5", overwrite=True)
 
 # Create loss graph (exported in metrics/loss/)
 generateLossGraph(history)
+
+results = model.evaluate(X_test, y_test_oh)
+print("test loss, test acc:", results)
+print("number of epochs: ", EPOCHS)
 
 # Make prediction (we do this instead of evaluate to have access to result vector)
 y_pred = model.predict(X_test)
