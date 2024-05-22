@@ -4,13 +4,8 @@ from tools.data import convertToOneHot, convertLabelsToInt, convertSoftmaxToInde
 import numpy as np
 from mlp import MLP
 import keras
-import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
-import seaborn as sn
-import matplotlib.pyplot as plt
-import os
-from tools.metrics import generateLossGraph
+from tools.traces import generateTraces
 
 EPOCHS = 200
 
@@ -42,12 +37,6 @@ model.compile(
 )
 # Training
 history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
-# Save resulting weights
-trainings = os.listdir('weights/')
-model.save_weights(f"weights/weights{len(trainings)}.weights.h5", overwrite=True)
-
-# Create loss graph (exported in metrics/loss/)
-generateLossGraph(history)
 
 results = model.evaluate(X_test, y_test_oh)
 print("test loss, test acc:", results)
@@ -59,12 +48,7 @@ y_pred = model.predict(X_test)
 y_pred = convertSoftmaxToIndex(y_pred)
 y_test = convertLabelsToInt(y_test)
 
-cfm = confusion_matrix(y_test, y_pred)
-classes = ["none", "tpose", "bucket", "skyward"]
+generateTraces(history, model, y_test, y_pred)
 
-df_cfm = pd.DataFrame(cfm, index = classes, columns = classes)
-plt.figure(figsize = (10,7))
-cfm_plot = sn.heatmap(df_cfm, annot=True, fmt=".1f")
-nb_cfm = os.listdir('metrics/cfm/')
-cfm_plot.figure.savefig(f"metrics/cfm/cfm{len(nb_cfm)}.png")
+
 
