@@ -1,3 +1,8 @@
+# Get datasets and tuning results
+
+Datasets: https://drive.google.com/drive/folders/1l23H0WoWSGN8xMLyO0wqD7xpw6ZSSq1m?usp=share_link
+Tuning results: https://docs.google.com/document/d/1cxW31f9j6zFILOP5rkpSA5Cyu1AAaA-zcE2e5RfgZ5Q/edit?usp=sharing
+
 # ZED SDK - Body Tracking
 
 This sample shows how to detect and track human bodies in space.
