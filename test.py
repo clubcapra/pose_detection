@@ -1,6 +1,6 @@
 from json_extractor import process_dataset
 from logic.pose_detection import getAnglesFromBodyData
-from utils.data import convertToOneHot, convertLabelsToInt, convertSoftmaxToIndex
+from tools.data import convertToOneHot, convertLabelsToInt, convertSoftmaxToIndex
 import numpy as np
 from mlp import MLP
 import keras
@@ -10,7 +10,7 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sn
 import matplotlib.pyplot as plt
 import os
-from utils.metrics import generateLossGraph
+from tools.metrics import generateLossGraph
 
 EPOCHS = 200
 
