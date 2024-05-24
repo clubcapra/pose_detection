@@ -1,16 +1,24 @@
-from json_extractor import process_dataset
+from tools.json_extractor import process_dataset
 from logic.pose_detection import getAnglesFromBodyData
-from tools.data import convertToOneHot, convertLabelsToInt, convertSoftmaxToIndex
+from tools.data import convertToOneHot, convertLabelsToInt, convertSoftmaxToIndex, balanceDataset
 import numpy as np
-from mlp import MLP
+from models.mlp import MLP
 import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 200
+EPOCHS = 50
 
 directory = "dataset/"
 X, y = process_dataset(directory)
+
+unique, counts = np.unique(y, return_counts=True)
+print(dict(zip(unique, counts)))
+
+X_balanced, y_balanced = balanceDataset(X, y)
+
+unique, counts = np.unique(y_balanced, return_counts=True)
+print(dict(zip(unique, counts)))
 
 # Will be implemented in main?
 angles = []

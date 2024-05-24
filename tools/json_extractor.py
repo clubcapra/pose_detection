@@ -29,8 +29,10 @@ def process_json_files(directory):
 
         for keypoints in keypoints_list:
             # Create a new array with an additional dimension for the label
-            data.append(keypoints)
-            labels.append(label)
+            # keypoints = np.nan_to_num(keypoints)
+            if not np.isnan(keypoints).any():
+              data.append(keypoints)
+              labels.append(label)
 
     return np.array(data), np.array(labels)
 
