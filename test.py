@@ -7,7 +7,7 @@ import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 50
+EPOCHS = 75
 
 directory = "dataset/"
 X, y = process_dataset(directory)

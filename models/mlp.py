@@ -22,7 +22,7 @@ class MLP(keras.Model):
         self.dense8 = keras.layers.Dense(8, activation="relu")
         self.bn8 = keras.layers.BatchNormalization()
         self.dense9 = keras.layers.Dense(4, activation="softmax")
-        self.dropout = keras.layers.Dropout(0.5)
+        self.dropout = keras.layers.Dropout(0.4)
 
     def call(self, inputs):
         x = self.dense1(inputs)
