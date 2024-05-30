@@ -30,7 +30,10 @@ import cv_viewer.tracking_viewer as cv_viewer
 import numpy as np
 import argparse
 import csv
-from logic.pose_detection import PoseDectection, PoseType
+from logic.pose_detection import getAnglesFromBodyData
+from models.mlp import MLP
+
+CONFIDENCE = 0.75
 
 def parse_args(init):
     if len(opt.input_svo_file)>0 and opt.input_svo_file.endswith(".svo"):
@@ -75,11 +78,15 @@ def main():
     print("Running Body Tracking sample ... Press 'q' to quit, or 'm' to pause or restart")
 
     pose_dict = {
-        -1: "NO POSE",
-        0: "FOLLOW",
-        1: "IDLE",
-        2: "RETRACE" 
+        0: "NO POSE",
+        1: "T-POSE",
+        2: "BUCKET",
+        3: "SKYWARD" 
     }
+
+    # Initialize model with specific weights
+    mlp = MLP()
+    mlp.load_weights("trainings/training14/weights/weights14.weights.h5")
 
     # Create a Camera object
     zed = sl.Camera()
@@ -131,8 +138,7 @@ def main():
     image = sl.Mat()
     key_wait = 10 
 
-    pose_detector = PoseDectection()
-    pose = "T-Pose"
+    pose = pose_dict.get(0)
 
     with open('keypoint_data.csv', 'a', newline='') as csvfile:
         fieldnames = ['Right shoulder', 'Right elbow', 'Left shoulder', 'Left elbow', 'Label']
@@ -146,18 +152,28 @@ def main():
                 zed.retrieve_image(image, sl.VIEW.LEFT, sl.MEM.CPU, display_resolution)
                 # Retrieve bodies
                 zed.retrieve_bodies(bodies, body_runtime_param)
-                # for body in bodies.body_list:
-                #     pose = pose_detector.detectPose(body)
+                for body in bodies.body_list:
+                    angles = getAnglesFromBodyData(body.keypoint)
+                    inputs = np.array(angles)
+                    inputs = np.expand_dims(inputs, axis=0) 
+                    predictions = mlp.call(inputs)
+                    max_idx = np.argmax(predictions)
+                    print(pose_dict.get(max_idx))
+                    if predictions[0, max_idx] > CONFIDENCE:
+                        pose = pose_dict.get(max_idx)
 
-                # Write out keypoints to csv file
-                for body_index, body in enumerate(bodies.body_list):
-                    angles = pose_detector.getAnglesFromBodyData(body)
-                    writer.writerow({'Right shoulder': angles[0], 'Right elbow': angles[1], 'Left shoulder': angles[2], 'Left elbow': angles[3], 'Label': pose})
-
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                position = (50, 50)  # Position of the text (x, y) starting from the top-left corner
+                font_scale = 1
+                font_color = (255, 255, 255)  # White color in BGR
+                line_thickness = 2
+ 
                 # Update GL view
                 viewer.update_view(image, bodies) 
                 # Update OCV view
                 image_left_ocv = image.get_data()
+                # Write the text on the image
+                cv2.putText(image_left_ocv, pose, position, font, font_scale, font_color, line_thickness)
                 cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
                 # cv2.putText(image_left_ocv, pose_dict[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
                 cv2.imshow("ZED | 2D View", image_left_ocv)
