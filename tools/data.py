@@ -7,7 +7,6 @@ def convertToOneHot(y, nb_outputs):
 
   for i in range(y.shape[0]):
     index = pose_dict[y[i]]
-    print(y[i], " converted to ", pose_dict[y[i]])
     oh_y[i][index] = 1
 
   return oh_y
