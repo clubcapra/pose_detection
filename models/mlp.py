@@ -5,9 +5,9 @@ import keras
 class MLP(keras.Model):
     def __init__(self):
         super().__init__()
-        self.dense1 = keras.layers.Dense(8, activation="relu")
+        self.dense1 = keras.layers.Dense(4, activation="relu")
         self.bn1 = keras.layers.BatchNormalization()
-        self.dense2 = keras.layers.Dense(16, activation="relu")
+        self.dense2 = keras.layers.Dense(8, activation="relu")
         self.bn2 = keras.layers.BatchNormalization()
         self.dense3 = keras.layers.Dense(16, activation="relu")
         self.bn3 = keras.layers.BatchNormalization()
@@ -22,7 +22,7 @@ class MLP(keras.Model):
         self.dense8 = keras.layers.Dense(8, activation="relu")
         self.bn8 = keras.layers.BatchNormalization()
         self.dense9 = keras.layers.Dense(4, activation="softmax")
-        self.dropout = keras.layers.Dropout(0.4)
+        self.dropout = keras.layers.Dropout(0.5)
 
     def call(self, inputs):
         x = self.dense1(inputs)

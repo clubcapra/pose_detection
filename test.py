@@ -7,7 +7,7 @@ import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 75
+EPOCHS = 1
 
 directory = "dataset/"
 X, y = process_dataset(directory)
@@ -41,7 +41,7 @@ model = MLP()
 model.compile(
     loss=keras.losses.CategoricalCrossentropy(),
     metrics=[keras.metrics.CategoricalAccuracy()],
-    optimizer=keras.optimizers.Adam(learning_rate=0.001),
+    optimizer=keras.optimizers.Adam(learning_rate=0.0005),
 )
 # Training
 history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)

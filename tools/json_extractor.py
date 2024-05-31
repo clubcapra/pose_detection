@@ -36,9 +36,39 @@ def process_json_files(directory):
 
     return np.array(data), np.array(labels)
 
+def process_json_file(directory):
+
+    data = []
+    labels = []
+
+    file_name = os.path.basename(directory)
+    label = file_name[:-6]
+    keypoints_list = extract_keypoints(directory)
+
+    for keypoints in keypoints_list:
+        if not np.isnan(keypoints).any():
+            data.append(keypoints)
+            labels.append(label)
+
+    return np.array(data), np.array(labels)
+
 
 def process_dataset(directory):
     data, labels = process_json_files(directory)
+    return data, labels
+
+def process_dataset_single(directory):
+    data, labels = process_json_file(directory)
+    return data, labels
+
+def process_dataset_group(directories):
+    data = []
+    labels = []
+    for directory in directories: 
+        data_temp, labels_temp = process_dataset_single(directory)
+        data.extend(data_temp)
+        labels.extend(labels_temp)
+
     return data, labels
 
 
