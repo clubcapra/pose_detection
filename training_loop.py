@@ -7,7 +7,7 @@ import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 1
+EPOCHS = 150
 
 directory = "dataset/"
 X, y = process_dataset(directory)
@@ -44,6 +44,7 @@ model.compile(
     optimizer=keras.optimizers.Adam(learning_rate=0.0005),
 )
 # Training
+print(X_train.shape)
 history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
 
 results = model.evaluate(X_test, y_test_oh)
