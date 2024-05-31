@@ -3,13 +3,18 @@ import os
 from sklearn.metrics import confusion_matrix
 import pandas as pd
 import seaborn as sn
+import numpy as np
+import hashlib
 
 def generateTraces(history, model=None, y_test=None, y_pred=None):
   trainingNb = getNumberOfTrainings()
   generateNewTrainingDir(trainingNb)
   generateMetrics(history, trainingNb, y_test, y_pred)
   if(model is not None):
-    model.save_weights(f"trainings/training{trainingNb}/weights/weights{trainingNb}.weights.h5", overwrite=True)
+    model.save(f"trainings/training{trainingNb}/model/model{trainingNb}.keras", overwrite=True)
+    checksum = model_weights_checksum(model)
+    with open(f"trainings/training{trainingNb}/model/weights_checksum{trainingNb}.txt", 'w') as f:
+        f.write(checksum)
 
 def generateMetrics(history, trainingNb, y_test=None, y_pred=None):
   generateLossGraph(history, trainingNb)
@@ -24,7 +29,7 @@ def generateNewTrainingDir(trainingNb):
   directories = [
       os.path.join(base_dir, 'metrics', 'loss'),
       os.path.join(base_dir, 'metrics', 'cfm'),
-      os.path.join(base_dir, 'weights')
+      os.path.join(base_dir, 'model')
   ]
 
   # Create each directory in the list
@@ -55,3 +60,8 @@ def generateCfm(trainingNb, y_test, y_pred):
   plt.figure(figsize = (10,7))
   cfm_plot = sn.heatmap(df_cfm, annot=True, fmt=".1f")
   cfm_plot.figure.savefig(f"trainings/training{trainingNb}/metrics/cfm/cfm{trainingNb}.png")
+
+def model_weights_checksum(model):
+  weights = model.get_weights()
+  weights_concat = np.concatenate([w.flatten() for w in weights])
+  return hashlib.md5(weights_concat).hexdigest()
