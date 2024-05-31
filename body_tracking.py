@@ -32,6 +32,8 @@ import argparse
 import csv
 from logic.pose_detection import getAnglesFromBodyData
 from models.mlp import MLP
+import keras
+import hashlib
 
 CONFIDENCE = 0.75
 
@@ -72,7 +74,10 @@ def parse_args(init):
     else : 
         print("[Sample] Using default resolution")
 
-
+def model_weights_checksum(model):
+    weights = model.get_weights()
+    weights_concat = np.concatenate([w.flatten() for w in weights])
+    return hashlib.md5(weights_concat).hexdigest()
 
 def main():
     print("Running Body Tracking sample ... Press 'q' to quit, or 'm' to pause or restart")
@@ -84,9 +89,15 @@ def main():
         3: "SKYWARD" 
     }
 
-    # Initialize model with specific weights
-    mlp = MLP()
-    mlp.load_weights("trainings/training14/weights/weights14.weights.h5")
+    mlp = keras.saving.load_model("./trainings/training28/model/model28.keras", custom_objects={'MLP': MLP})
+
+    checksum_after = model_weights_checksum(mlp)
+
+    with open("./trainings/training28/model/weights_checksum28.txt", 'r') as f:
+      checksum_before = f.read().strip()
+
+    assert checksum_before == checksum_after, "The weights have not been loaded correctly!"
+    print("The weights have been loaded correctly!")
 
     # Create a Camera object
     zed = sl.Camera()
