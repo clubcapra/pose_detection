@@ -3,8 +3,8 @@ import keras
 
 
 class MLP(keras.Model):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dropout_rate=0.5, **kwargs):
+        super().__init__(**kwargs)
         self.dense1 = keras.layers.Dense(4, activation="relu")
         self.bn1 = keras.layers.BatchNormalization()
         self.dense2 = keras.layers.Dense(8, activation="relu")
@@ -22,7 +22,7 @@ class MLP(keras.Model):
         self.dense8 = keras.layers.Dense(8, activation="relu")
         self.bn8 = keras.layers.BatchNormalization()
         self.dense9 = keras.layers.Dense(4, activation="softmax")
-        self.dropout = keras.layers.Dropout(0.5)
+        self.dropout = keras.layers.Dropout(dropout_rate)
 
     def call(self, inputs):
         x = self.dense1(inputs)
@@ -50,3 +50,14 @@ class MLP(keras.Model):
         x = self.bn8(x)
         x = self.dropout(x)
         return self.dense9(x)
+    
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'dropout_rate': self.dropout.rate,
+        })
+        return config
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
