@@ -34,6 +34,8 @@ from logic.pose_detection import getAnglesFromBodyData
 from models.mlp import MLP
 import keras
 import hashlib
+import time
+from collections import deque
 
 CONFIDENCE = 0.75
 
@@ -151,6 +153,24 @@ def main():
 
     pose = pose_dict.get(0)
 
+    pose_history = deque(maxlen=30)
+    start_time = None  # Start time for the current pose
+    state = None  # Current state
+    progress_bar_width = 300
+    progress_bar_height = 20
+
+    def update_progress_bar(image, progress):
+        progress_bar_color = (0, 255, 0)  # Green color for the progress bar
+        progress_bar_position = (10, 30)  # Position of the progress bar
+
+        progress_bar_end = int(progress * progress_bar_width)
+        cv2.rectangle(image, (progress_bar_position[0], progress_bar_position[1]),
+                    (progress_bar_position[0] + progress_bar_end, progress_bar_position[1] + progress_bar_height),
+                    progress_bar_color, -1)
+        cv2.rectangle(image, (progress_bar_position[0], progress_bar_position[1]),
+                    (progress_bar_position[0] + progress_bar_width, progress_bar_position[1] + progress_bar_height),
+                    (255, 255, 255), 2)
+
     with open('keypoint_data.csv', 'a', newline='') as csvfile:
         fieldnames = ['Right shoulder', 'Right elbow', 'Left shoulder', 'Left elbow', 'Label']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -169,9 +189,19 @@ def main():
                     inputs = np.expand_dims(inputs, axis=0) 
                     predictions = mlp.call(inputs)
                     max_idx = np.argmax(predictions)
-                    print(pose_dict.get(max_idx))
-                    if predictions[0, max_idx] > CONFIDENCE:
-                        pose = pose_dict.get(max_idx)
+                    print(predictions)
+                    pose = pose_dict.get(max_idx)
+                    pose_history.append(pose)
+
+                # Check if the same pose has been detected for 3 seconds
+                if len(pose_history) == pose_history.maxlen and all(p == pose_history[0] for p in pose_history):
+                    if start_time is None:
+                        start_time = time.time()
+                    else:
+                        elapsed_time = time.time() - start_time
+                        if elapsed_time >= 3:
+                            state = pose_history[0]
+                            start_time = None
 
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 position = (50, 50)  # Position of the text (x, y) starting from the top-left corner
@@ -185,6 +215,13 @@ def main():
                 image_left_ocv = image.get_data()
                 # Write the text on the image
                 cv2.putText(image_left_ocv, pose, position, font, font_scale, font_color, line_thickness)
+
+                # Update progress bar if counting
+                if start_time is not None:
+                    progress = min((time.time() - start_time) / 3, 1.0)
+                    update_progress_bar(image_left_ocv, progress)
+
+
                 cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
                 # cv2.putText(image_left_ocv, pose_dict[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
                 cv2.imshow("ZED | 2D View", image_left_ocv)
