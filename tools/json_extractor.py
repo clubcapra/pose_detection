@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import glob
+from constants import KEYPOINT_COUPLES
 
 
 def extract_keypoints(json_file):
@@ -21,6 +22,9 @@ def process_json_files(directory):
     json_files = glob.glob(os.path.join(directory, "*.json"))
     data = []
     labels = []
+    unique_keypoint_ids = set()
+    for couple in KEYPOINT_COUPLES:
+      unique_keypoint_ids.update(couple)
 
     for json_file in json_files:
         file_name = os.path.basename(json_file)
@@ -30,7 +34,7 @@ def process_json_files(directory):
         for keypoints in keypoints_list:
             # Create a new array with an additional dimension for the label
             # keypoints = np.nan_to_num(keypoints)
-            if not np.isnan(keypoints).any():
+            if not any(np.isnan(keypoints[id]).any() for id in unique_keypoint_ids):
               data.append(keypoints)
               labels.append(label)
 

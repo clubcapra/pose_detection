@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from json_extractor import process_dataset_group
+from tools.json_extractor import process_dataset_group
 
 directories = [
-    "../dataset/tpose1.json",
-    "../dataset/tpose2.json",
-    "../dataset/tpose3.json",
-    "../dataset/tpose4.json",
+    "dataset/none1.json",
+    "dataset/none2.json",
+    "dataset/none3.json",
+    "dataset/none4.json"
 ]
 
 # Example skeleton data

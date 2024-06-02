@@ -7,7 +7,7 @@ import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 150
+EPOCHS = 1500
 
 directory = "dataset/"
 X, y = process_dataset(directory)
@@ -15,20 +15,23 @@ X, y = process_dataset(directory)
 unique, counts = np.unique(y, return_counts=True)
 print(dict(zip(unique, counts)))
 
+# X_balanced, y_balanced = X, y
 X_balanced, y_balanced = balanceDataset(X, y)
+print("x_balanced shape: ", X_balanced.shape)
+print("y_balanced shape:", y_balanced.shape)
 
 unique, counts = np.unique(y_balanced, return_counts=True)
 print(dict(zip(unique, counts)))
 
 # Will be implemented in main?
 angles = []
-for i in range(X.shape[0]):
-    angles.append(getAnglesFromBodyData(X[i]))
-X = np.array(angles)
+for i in range(X_balanced.shape[0]):
+    angles.append(getAnglesFromBodyData(X_balanced[i]))
+X_balanced = np.array(angles)
 
 # Split dataset into training and test (validation split is done by model)
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=1
+    X_balanced, y_balanced, test_size=0.2, random_state=1
 )
 
 # Get one hot vector for training
