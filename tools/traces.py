@@ -6,20 +6,24 @@ import seaborn as sn
 import numpy as np
 import hashlib
 
-def generateTraces(history, model=None, y_test=None, y_pred=None):
+def generateTraces(history, classes, model=None, y_test=None, y_pred=None):
+  "Generating traces..."
   trainingNb = getNumberOfTrainings()
   generateNewTrainingDir(trainingNb)
-  generateMetrics(history, trainingNb, y_test, y_pred)
+
+  generateMetrics(history, trainingNb, classes, y_test, y_pred)
   if(model is not None):
     model.save(f"trainings/training{trainingNb}/model/model{trainingNb}.keras", overwrite=True)
     checksum = model_weights_checksum(model)
     with open(f"trainings/training{trainingNb}/model/weights_checksum{trainingNb}.txt", 'w') as f:
         f.write(checksum)
 
-def generateMetrics(history, trainingNb, y_test=None, y_pred=None):
+    print("Traces generated succesfully!")
+
+def generateMetrics(history, trainingNb, classes, y_test=None, y_pred=None):
   generateLossGraph(history, trainingNb)
   if all([y_test is not None, y_pred is not None]):
-    generateCfm(trainingNb, y_test, y_pred)
+    generateCfm(trainingNb, y_test, y_pred, classes)
 
 def generateNewTrainingDir(trainingNb):
   # Define the base directory
@@ -52,9 +56,8 @@ def generateLossGraph(history, trainingNb):
   plt.grid(True)
   plt.savefig(f"trainings/training{trainingNb}/metrics/loss/loss{trainingNb}.png")
 
-def generateCfm(trainingNb, y_test, y_pred):
+def generateCfm(trainingNb, y_test, y_pred, classes):
   cfm = confusion_matrix(y_test, y_pred)
-  classes = ["none", "tpose", "bucket", "skyward"]
 
   df_cfm = pd.DataFrame(cfm, index = classes, columns = classes)
   plt.figure(figsize = (10,7))

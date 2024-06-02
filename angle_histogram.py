@@ -5,15 +5,15 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from json_extractor import process_dataset_group
+from tools.json_extractor import process_dataset_group
 from logic.pose_detection import getAnglesFromBodyData
 
 # Example angle data
 directories = [
-    "../dataset/tpose1.json",
-    "../dataset/tpose2.json",
-    "../dataset/tpose3.json",
-    "../dataset/tpose4.json"
+    "dataset/skyward1.json",
+    "dataset/skyward1.json",
+    "dataset/skyward4.json",
+    "dataset/skyward5.json"
 ]
 
 # Example skeleton data

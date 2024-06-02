@@ -1,18 +1,27 @@
-from tools.json_extractor import process_dataset
+from tools.json_extractor import process_dataset_group
 from logic.pose_detection import getAnglesFromBodyData
-from tools.data import convertToOneHot, convertLabelsToInt, convertSoftmaxToIndex, balanceDataset
+from tools.data import (
+    convertToOneHot,
+    convertLabelsToInt,
+    convertSoftmaxToIndex,
+    balanceDataset,
+)
 import numpy as np
-from models.mlp import create_model_general
+from models.mlp import create_model_expert
 import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 5000
+EPOCHS = 1500
+pose_dict = {"none": 0, "bucket": 1}
+ensemble_classes = ["none", "bucket"]
+directories = [
+    "dataset/bucket1.json",
+    "dataset/bucket2.json",
+    "dataset/bucket3.json",
+]
 
-directory = "dataset/"
-pose_dict = {"none": 0, "tpose": 1, "bucket": 2, "skyward": 3}
-classes = ["none", "tpose", "bucket", "skyward"]
-X, y = process_dataset(directory)
+X, y = process_dataset_group(directories, rest_as_none=True)
 
 unique, counts = np.unique(y, return_counts=True)
 print("Incoming data: ",dict(zip(unique, counts)))
@@ -37,12 +46,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # Get one hot vector for training
-pose_dict = {"none": 0, "tpose": 1, "bucket": 2, "skyward": 3}
-y_train = convertToOneHot(y_train, 4, pose_dict)
-y_test_oh = convertToOneHot(y_test, 4, pose_dict)
+y_train = convertToOneHot(y_train, 2, pose_dict)
+y_test_oh = convertToOneHot(y_test, 2, pose_dict)
 
 # Initialize model
-model = create_model_general()
+model = create_model_expert(output_size=2)
 # Training
 history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
 
@@ -53,10 +61,7 @@ print("number of epochs: ", EPOCHS)
 # Make prediction (we do this instead of evaluate to have access to result vector)
 y_pred = model.predict(X_test)
 
-y_pred = convertSoftmaxToIndex(y_pred)
+y_pred_softmaxed = convertSoftmaxToIndex(y_pred)
 y_test = convertLabelsToInt(y_test, pose_dict)
 
-generateTraces(history, classes, model, y_test, y_pred)
-
-
-
+generateTraces(history, ensemble_classes, model, y_test, y_pred_softmaxed)

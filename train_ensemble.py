@@ -2,12 +2,12 @@ from tools.json_extractor import process_dataset
 from logic.pose_detection import getAnglesFromBodyData
 from tools.data import convertToOneHot, convertLabelsToInt, convertSoftmaxToIndex, balanceDataset
 import numpy as np
-from models.mlp import create_model_general
+from models.mlp import create_model_ensemble
 import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 5000
+EPOCHS = 3000
 
 directory = "dataset/"
 pose_dict = {"none": 0, "tpose": 1, "bucket": 2, "skyward": 3}
@@ -37,12 +37,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # Get one hot vector for training
-pose_dict = {"none": 0, "tpose": 1, "bucket": 2, "skyward": 3}
 y_train = convertToOneHot(y_train, 4, pose_dict)
 y_test_oh = convertToOneHot(y_test, 4, pose_dict)
 
 # Initialize model
-model = create_model_general()
+model = create_model_ensemble()
 # Training
 history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
 

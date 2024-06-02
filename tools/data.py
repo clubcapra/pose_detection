@@ -1,8 +1,6 @@
 import numpy as np
 
-pose_dict = {"none": 0, "tpose": 1, "bucket": 2, "skyward": 3}
-
-def convertToOneHot(y, nb_outputs):
+def convertToOneHot(y, nb_outputs, pose_dict):
   oh_y = np.zeros((y.shape[0], nb_outputs))
 
   for i in range(y.shape[0]):
@@ -11,7 +9,7 @@ def convertToOneHot(y, nb_outputs):
 
   return oh_y
 
-def convertLabelsToInt(y):
+def convertLabelsToInt(y, pose_dict):
   y_int = np.zeros_like(y, dtype=int)
 
   for i in range(y.shape[0]):
