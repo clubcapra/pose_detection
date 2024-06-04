@@ -95,8 +95,8 @@ def create_model_expert(output_size=4):
     )
 
     model.compile(
-        loss=keras.losses.CategoricalCrossentropy(),
-        metrics=[keras.metrics.CategoricalAccuracy()],
+        loss=keras.losses.BinaryCrossentropy(),
+        metrics=[keras.metrics.BinaryAccuracy()],
         optimizer=keras.optimizers.Adam(learning_rate=0.0001),
     )
 
