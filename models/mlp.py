@@ -74,19 +74,19 @@ def create_model_expert(output_size=4):
             keras.Input(shape=(4,)),
             keras.layers.Dense(4, activation="relu"),
             keras.layers.BatchNormalization(),
-            keras.layers.Dropout(0.1),
+            # keras.layers.Dropout(0.1),
             keras.layers.Dense(8, activation="relu"),
             keras.layers.BatchNormalization(),
             keras.layers.Dropout(0.1),
             keras.layers.Dense(16, activation="relu"),
             keras.layers.BatchNormalization(),
-            keras.layers.Dropout(0.1),
+            # keras.layers.Dropout(0.1),
             keras.layers.Dense(16, activation="relu"),
             keras.layers.BatchNormalization(),
             keras.layers.Dropout(0.1),
             keras.layers.Dense(8, activation="relu"),
             keras.layers.BatchNormalization(),
-            keras.layers.Dropout(0.1),
+            # keras.layers.Dropout(0.1),
             keras.layers.Dense(8, activation="relu"),
             keras.layers.BatchNormalization(),
             keras.layers.Dropout(0.1),
@@ -154,9 +154,9 @@ def load_and_rename_model(filepath, new_name):
 
 def create_model_ensemble(output_size=4):
     general_model = load_and_rename_model("./trainings/training106_4class/model/model106.keras", "general_model")
-    skyward_model = load_and_rename_model("./trainings/training93_skyward/model/model93.keras", "skyward_model")
-    bucket_model = load_and_rename_model("./trainings/training95_bucket/model/model95.keras", "bucket_model")
-    tpose_model = load_and_rename_model("./trainings/training97_tpose/model/model97.keras", "tpose_model")
+    skyward_model = load_and_rename_model("./trainings/training112_skyward/model/model112.keras", "skyward_model")
+    bucket_model = load_and_rename_model("./trainings/training111_bucket/model/model111.keras", "bucket_model")
+    tpose_model = load_and_rename_model("./trainings/training114_tpose/model/model114.keras", "tpose_model")
 
     base_models = [general_model, skyward_model, bucket_model, tpose_model]
 
@@ -170,16 +170,20 @@ def create_model_ensemble(output_size=4):
     concatenated = keras.layers.Concatenate()([*base_outputs, input_layer])
 
     # Define the decision head
-    x = keras.layers.Dense(14, activation="relu")(concatenated)
+    x = keras.layers.Dense(256, activation="relu")(concatenated)
     x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Dense(16, activation="relu")(x)
+    x = keras.layers.Dense(256, activation="relu")(x)
     x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Dense(16, activation="relu")(x)
-    x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Dense(16, activation="relu")(x)
-    x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Dense(8, activation="relu")(x)
-    x = keras.layers.BatchNormalization()(x)
+    # x = keras.layers.Dropout(0.05)(x)
+    # x = keras.layers.Dense(64, activation="relu")(x)
+    # x = keras.layers.BatchNormalization()(x)
+    # x = keras.layers.Dense(16, activation="relu")(x)
+    # x = keras.layers.BatchNormalization()(x)
+    # x = keras.layers.Dropout(0.1)(x)
+    # x = keras.layers.Dense(16, activation="relu")(x)
+    # x = keras.layers.BatchNormalization()(x)
+    # x = keras.layers.Dense(8, activation="relu")(x)
+    # x = keras.layers.BatchNormalization()(x)
     output_layer = keras.layers.Dense(units=output_size, activation="softmax")(x)
 
     # Create the model
@@ -191,5 +195,7 @@ def create_model_ensemble(output_size=4):
         metrics=[keras.metrics.CategoricalAccuracy()],
         optimizer=keras.optimizers.Adam(learning_rate=0.0001)
     )
+
+    # keras.utils.plot_model(model, "ensemble_model_architecture.png", show_shapes=True)
 
     return model

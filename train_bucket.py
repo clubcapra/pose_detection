@@ -12,7 +12,7 @@ import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 1500
+EPOCHS = 1750
 pose_dict = {"none": 0, "bucket": 1}
 ensemble_classes = ["none", "bucket"]
 directories = [
@@ -21,7 +21,7 @@ directories = [
     "dataset/bucket3.json",
 ]
 
-X, y = process_dataset_group(directories, rest_as_none=True)
+X, y = process_dataset_group(directories, rest_directory="dataset/")
 
 unique, counts = np.unique(y, return_counts=True)
 print("Incoming data: ",dict(zip(unique, counts)))

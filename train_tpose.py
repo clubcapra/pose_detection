@@ -7,12 +7,12 @@ from tools.data import (
     balanceDataset,
 )
 import numpy as np
-from models.mlp import create_model_export
+from models.mlp import create_model_expert
 import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 1500
+EPOCHS = 3000
 pose_dict = {"none": 0, "tpose": 1}
 ensemble_classes = ["none", "tpose"]
 directories = [
@@ -27,7 +27,7 @@ directories = [
     "dataset/none5.json",
 ]
 
-X, y = process_dataset_group(directories)
+X, y = process_dataset_group(directories, rest_directory="dataset/")
 
 unique, counts = np.unique(y, return_counts=True)
 print("Incoming data: ", dict(zip(unique, counts)))
@@ -56,7 +56,7 @@ y_train = convertToOneHot(y_train, 2, pose_dict)
 y_test_oh = convertToOneHot(y_test, 2, pose_dict)
 
 # Initialize model
-model = create_model_export(output_size=2)
+model = create_model_expert(output_size=2)
 # Training
 history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
 

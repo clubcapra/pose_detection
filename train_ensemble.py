@@ -7,7 +7,7 @@ import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 3000
+EPOCHS = 80
 
 directory = "dataset/"
 pose_dict = {"none": 0, "tpose": 1, "bucket": 2, "skyward": 3}
