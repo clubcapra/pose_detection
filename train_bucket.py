@@ -12,7 +12,7 @@ import keras
 from sklearn.model_selection import train_test_split
 from tools.traces import generateTraces
 
-EPOCHS = 1750
+EPOCHS = 500
 pose_dict = {"none": 0, "bucket": 1}
 ensemble_classes = ["none", "bucket"]
 directories = [
@@ -35,12 +35,13 @@ unique, counts = np.unique(y_balanced, return_counts=True)
 print("Data being fed to model:", dict(zip(unique, counts)))
 
 # Will be implemented in main?
-angles = []
-for i in range(X_balanced.shape[0]):
-    angles.append(getAnglesFromBodyData(X_balanced[i]))
-X_balanced = np.array(angles)
+# angles = []
+# for i in range(X_balanced.shape[0]):
+#     angles.append(getAnglesFromBodyData(X_balanced[i]))
+# X_balanced = np.array(angles)
 
 # Split dataset into training and test (validation split is done by model)
+print("Shape of y_balanced: ", y_balanced.shape)
 X_train, X_test, y_train, y_test = train_test_split(
     X_balanced, y_balanced, test_size=0.2, random_state=1
 )
@@ -50,9 +51,9 @@ y_train = convertToOneHot(y_train, 2, pose_dict)
 y_test_oh = convertToOneHot(y_test, 2, pose_dict)
 
 # Initialize model
-model = create_model_expert(output_size=2)
+model = create_model_expert()
 # Training
-history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
+history = model.fit(x=X_train, y=y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
 
 results = model.evaluate(X_test, y_test_oh)
 print("test loss, test acc:", results)

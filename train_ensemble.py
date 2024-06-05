@@ -26,10 +26,10 @@ unique, counts = np.unique(y_balanced, return_counts=True)
 print("Data being fed to model:", dict(zip(unique, counts)))
 
 # Will be implemented in main?
-angles = []
-for i in range(X_balanced.shape[0]):
-    angles.append(getAnglesFromBodyData(X_balanced[i]))
-X_balanced = np.array(angles)
+# angles = []
+# for i in range(X_balanced.shape[0]):
+#     angles.append(getAnglesFromBodyData(X_balanced[i]))
+# X_balanced = np.array(angles)
 
 # Split dataset into training and test (validation split is done by model)
 X_train, X_test, y_train, y_test = train_test_split(
@@ -41,7 +41,7 @@ y_train = convertToOneHot(y_train, 4, pose_dict)
 y_test_oh = convertToOneHot(y_test, 4, pose_dict)
 
 # Initialize model
-model = create_model_ensemble()
+model = create_model_ensemble(input_shape=(7,3))
 # Training
 history = model.fit(X_train, y_train, epochs=EPOCHS, verbose=True, validation_split=0.2)
 

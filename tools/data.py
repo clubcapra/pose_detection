@@ -52,6 +52,16 @@ def balanceDataset(X, y):
     y = np.delete(y, indexesToRemove)
 
   return X, y
+
+def normalize_skeleton(keypoints):
+
+  # Calculate the center of the body (average of all keypoints)
+  body_center = np.mean(keypoints, axis=0)
+
+  # Center all keypoints by subtracting the body center
+  normalized_keypoints = keypoints - body_center
+
+  return normalized_keypoints
   
 
 

@@ -10,6 +10,8 @@ KEYPOINT_COUPLES = [[1, 2],
                     [5, 6],
                     [6, 7]]
 
+KEYPOINT_OF_INTEREST = [1, 2, 3, 4, 5, 6, 7]
+
 ERROR_MARGIN = 30
 
 TPOSE_ANGLES = [0, 10, 0, 10]

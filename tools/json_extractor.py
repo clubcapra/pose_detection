@@ -2,7 +2,8 @@ import os
 import json
 import numpy as np
 import glob
-from constants import KEYPOINT_COUPLES
+from constants import KEYPOINT_OF_INTEREST
+from tools.data import normalize_skeleton
 
 
 def extract_keypoints(json_file):
@@ -22,9 +23,6 @@ def process_json_files(directory):
     json_files = glob.glob(os.path.join(directory, "*.json"))
     data = []
     labels = []
-    unique_keypoint_ids = set()
-    for couple in KEYPOINT_COUPLES:
-      unique_keypoint_ids.update(couple)
 
     for json_file in json_files:
         file_name = os.path.basename(json_file)
@@ -34,7 +32,8 @@ def process_json_files(directory):
         for keypoints in keypoints_list:
             # Create a new array with an additional dimension for the label
             # keypoints = np.nan_to_num(keypoints)
-            if not any(np.isnan(keypoints[id]).any() for id in unique_keypoint_ids):
+            if not any(np.isnan(keypoints[id]).any() for id in KEYPOINT_OF_INTEREST):
+              keypoints = normalize_skeleton([keypoints[x] for x in KEYPOINT_OF_INTEREST])
               data.append(keypoints)
               labels.append(label)
 
@@ -43,16 +42,14 @@ def process_json_files(directory):
 def process_json_file(directory):
     data = []
     labels = []
-    unique_keypoint_ids = set()
-    for couple in KEYPOINT_COUPLES:
-      unique_keypoint_ids.update(couple)
 
     file_name = os.path.basename(directory)
     label = file_name[:-6]
     keypoints_list = extract_keypoints(directory)
 
     for keypoints in keypoints_list:
-        if not any(np.isnan(keypoints[id]).any() for id in unique_keypoint_ids):
+        if not any(np.isnan(keypoints[id]).any() for id in KEYPOINT_OF_INTEREST):
+            keypoints = normalize_skeleton([keypoints[x] for x in KEYPOINT_OF_INTEREST])
             data.append(keypoints)
             labels.append(label)
 
@@ -71,9 +68,6 @@ def process_dataset_except(rest_directory, directories):
     json_files = glob.glob(os.path.join(rest_directory, "*.json"))
     data = []
     labels = []
-    unique_keypoint_ids = set()
-    for couple in KEYPOINT_COUPLES:
-      unique_keypoint_ids.update(couple)
 
     for json_file in json_files:
         if json_file not in directories:
@@ -83,7 +77,8 @@ def process_dataset_except(rest_directory, directories):
           for keypoints in keypoints_list:
               # Create a new array with an additional dimension for the label
               # keypoints = np.nan_to_num(keypoints)
-              if not any(np.isnan(keypoints[id]).any() for id in unique_keypoint_ids):
+              if not any(np.isnan(keypoints[id]).any() for id in KEYPOINT_OF_INTEREST):
+                keypoints = normalize_skeleton([keypoints[x] for x in KEYPOINT_OF_INTEREST])
                 data.append(keypoints)
                 labels.append(label)
 
