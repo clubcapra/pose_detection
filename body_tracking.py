@@ -30,15 +30,15 @@ import cv_viewer.tracking_viewer as cv_viewer
 import numpy as np
 import argparse
 import csv
-from logic.pose_detection import getAnglesFromBodyData
+from tools import data
 import keras
 import hashlib
 import time
 from collections import deque
 
 CONFIDENCE = 0.8
-model_path = './trainings/training109_ensemble/model/model109.keras'
-checksum_path = './trainings/training109_ensemble/model/weights_checksum109.txt'
+model_path = './trainings/training80_4class/model/model80.keras'
+checksum_path = './trainings/training80_4class/model/weights_checksum80.txt'
 
 def parse_args(init):
     if len(opt.input_svo_file)>0 and opt.input_svo_file.endswith(".svo"):
@@ -170,10 +170,8 @@ def main():
                 # Retrieve bodies
                 zed.retrieve_bodies(bodies, body_runtime_param)
                 for body in bodies.body_list:
-                    angles = getAnglesFromBodyData(body.keypoint)
-                    inputs = np.array(angles)
-                    inputs = np.expand_dims(inputs, axis=0) 
-                    predictions = mlp.call(inputs)
+                    keypoints = data.getKeypointsOfInterestFromBodyData(body.keypoint)
+                    predictions = mlp.call(keypoints)
                     max_idx = np.argmax(predictions)
                     if predictions[0][max_idx] > CONFIDENCE:
                         pose = pose_dict.get(max_idx)

@@ -1,4 +1,6 @@
+from typing import Collection
 import numpy as np
+from constants import KEYPOINT_OF_INTEREST
 
 def convertToOneHot(y, nb_outputs, pose_dict):
   oh_y = np.zeros((y.shape[0], nb_outputs))
@@ -62,6 +64,14 @@ def normalize_skeleton(keypoints):
   normalized_keypoints = keypoints - body_center
 
   return normalized_keypoints
+
+def getKeypointsOfInterestFromBodyData(bodyData: Collection[float]):
+    data = []
+    keypoints = normalize_skeleton([bodyData[x] for x in KEYPOINT_OF_INTEREST])
+    data.append(keypoints)
+
+    return np.array(data)
+    
   
 
 
