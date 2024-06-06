@@ -95,12 +95,9 @@ def main():
     mlp = keras.saving.load_model(model_path)
 
     checksum_after = model_weights_checksum(mlp)
-    print(checksum_after)
 
     with open(checksum_path, 'r') as f:
       checksum_before = f.read().strip()
-
-    print(checksum_before)
 
     assert checksum_before == checksum_after, "The weights have not been loaded correctly!"
     print("The weights have been loaded correctly!")
