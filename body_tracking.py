@@ -35,6 +35,8 @@ import keras
 import hashlib
 import time
 from collections import deque
+from constants import POSE_DICT
+
 
 CONFIDENCE = 0.8
 model_path = './trainings/training80_4class/model/model80.keras'
@@ -84,14 +86,7 @@ def model_weights_checksum(model):
 
 def main():
     print("Running Body Tracking sample ... Press 'q' to quit, or 'm' to pause or restart")
-
-    pose_dict = {
-        0: "NO POSE",
-        1: "T-POSE",
-        2: "BUCKET",
-        3: "SKYWARD" 
-    }
-
+    
     mlp = keras.saving.load_model(model_path)
 
     checksum_after = model_weights_checksum(mlp)
@@ -152,7 +147,7 @@ def main():
     image = sl.Mat()
     key_wait = 10 
 
-    pose = pose_dict.get(0)
+    pose = POSE_DICT.get(0)
 
     with open('keypoint_data.csv', 'a', newline='') as csvfile:
         fieldnames = ['Right shoulder', 'Right elbow', 'Left shoulder', 'Left elbow', 'Label']
@@ -167,13 +162,14 @@ def main():
                 # Retrieve bodies
                 zed.retrieve_bodies(bodies, body_runtime_param)
                 for body in bodies.body_list:
+                    person = Person()
                     keypoints = data.getKeypointsOfInterestFromBodyData(body.keypoint)
                     predictions = mlp.call(keypoints)
                     max_idx = np.argmax(predictions)
                     if predictions[0][max_idx] > CONFIDENCE:
-                        pose = pose_dict.get(max_idx)
+                        pose = POSE_DICT.get(max_idx)
                     else:
-                        pose = pose_dict.get(0)
+                        pose = POSE_DICT.get(0)
 
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 position = (50, 50)  # Position of the text (x, y) starting from the top-left corner
@@ -189,7 +185,7 @@ def main():
                 cv2.putText(image_left_ocv, pose, position, font, font_scale, font_color, line_thickness)
 
                 cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
-                # cv2.putText(image_left_ocv, pose_dict[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                # cv2.putText(image_left_ocv, POSE_DICT[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
                 cv2.imshow("ZED | 2D View", image_left_ocv)
                 key = cv2.waitKey(key_wait)
                 if key == 113: # for 'q' key

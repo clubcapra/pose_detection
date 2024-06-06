@@ -21,3 +21,10 @@ SKYWARD_ANGLES = [90, 0, 90, 0]
 BUCKET_ANGLES = [0, 105, 0, 105]
 
 DATASET_PATH = "./dataset"
+
+POSE_DICT = {
+        0: "NO POSE",
+        1: "T-POSE",
+        2: "BUCKET",
+        3: "SKYWARD" 
+}

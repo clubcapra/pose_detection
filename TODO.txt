@@ -1,3 +1,0 @@
-Add config report to metrics after training (to eliminate need for google docs)
-Implement balanced shuffle for training (use imbalanced-learn)
-Test SVM and KNN

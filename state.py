@@ -3,14 +3,18 @@ class StateType(enumerate):
     FOLLOW = 1
     RETRACE = 2
 
-class State:
-    def __init__(self):
-        self.state = StateType.IDLE
+class SystemState:
+    _instance = None
 
-    def setState(self, state: StateType) -> None:
-        self.state = state
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.state = StateType.IDLE
+        return cls._instance
 
-    def getState(self) -> StateType:
-        return self.state
-
+    def set_state(self, new_state):
+        if new_state in StateType:
+            self.state = new_state
+        else:
+            raise ValueError("Invalid state")
     
