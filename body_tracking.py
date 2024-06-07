@@ -22,6 +22,7 @@
    This sample shows how to detect a human bodies and draw their 
    modelised skeleton in an OpenGL window
 """
+from typing import Collection
 import cv2
 import sys
 import pyzed.sl as sl
@@ -36,6 +37,7 @@ import hashlib
 import time
 from collections import deque
 from constants import POSE_DICT
+from tools.person import Person
 
 
 CONFIDENCE = 0.8
@@ -84,9 +86,18 @@ def model_weights_checksum(model):
     weights_concat = np.concatenate([w.flatten() for w in weights])
     return hashlib.md5(weights_concat).hexdigest()
 
+def display_persons_with_poses(persons, image):
+    image = cv2.imread("blank_image.jpg")  # Replace "blank_image.jpg" with your image filename
+    y = 50
+    for person in persons:
+        image = cv2.putText(image, f"{person.get_id()} - Pose: {POSE_DICT.get(person.get_pose())}", (50, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        y += 50
+
+    return image
+
 def main():
     print("Running Body Tracking sample ... Press 'q' to quit, or 'm' to pause or restart")
-    
+
     mlp = keras.saving.load_model(model_path)
 
     checksum_after = model_weights_checksum(mlp)
@@ -148,6 +159,7 @@ def main():
     key_wait = 10 
 
     pose = POSE_DICT.get(0)
+    persons = []
 
     with open('keypoint_data.csv', 'a', newline='') as csvfile:
         fieldnames = ['Right shoulder', 'Right elbow', 'Left shoulder', 'Left elbow', 'Label']
@@ -162,27 +174,23 @@ def main():
                 # Retrieve bodies
                 zed.retrieve_bodies(bodies, body_runtime_param)
                 for body in bodies.body_list:
-                    person = Person()
+                    person = Person(body.id)
+                    persons.append(person)
                     keypoints = data.getKeypointsOfInterestFromBodyData(body.keypoint)
                     predictions = mlp.call(keypoints)
                     max_idx = np.argmax(predictions)
                     if predictions[0][max_idx] > CONFIDENCE:
-                        pose = POSE_DICT.get(max_idx)
+                        person.add_pose(max_idx)
                     else:
-                        pose = POSE_DICT.get(0)
-
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                position = (50, 50)  # Position of the text (x, y) starting from the top-left corner
-                font_scale = 1
-                font_color = (255, 255, 255)  # White color in BGR
-                line_thickness = 2
+                        person.add_pose(0)
  
                 # Update GL view
                 viewer.update_view(image, bodies) 
                 # Update OCV view
                 image_left_ocv = image.get_data()
                 # Write the text on the image
-                cv2.putText(image_left_ocv, pose, position, font, font_scale, font_color, line_thickness)
+
+                display_persons_with_poses(persons, image_left_ocv)
 
                 cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
                 # cv2.putText(image_left_ocv, POSE_DICT[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
