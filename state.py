@@ -1,7 +1,4 @@
-class StateType(enumerate):
-    IDLE = 0
-    FOLLOW = 1
-    RETRACE = 2
+from constants import POSE_DICT
 
 class SystemState:
     _instance = None
@@ -9,12 +6,13 @@ class SystemState:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.state = StateType.IDLE
+            cls._instance.state = 1
+            cls._instance.focus_body_id = None
         return cls._instance
 
     def set_state(self, new_state):
-        if new_state in StateType:
-            self.state = new_state
-        else:
-            raise ValueError("Invalid state")
+        self.state = new_state
+        
+    def set_focus_body_id(self, body_id):
+        self.focus_body_id = body_id
     

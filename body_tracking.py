@@ -22,10 +22,11 @@
    This sample shows how to detect a human bodies and draw their 
    modelised skeleton in an OpenGL window
 """
-from typing import Collection
+from typing import Collection, Dict
 import cv2
 import sys
 import pyzed.sl as sl
+from sympy import E
 import ogl_viewer.viewer as gl
 import cv_viewer.tracking_viewer as cv_viewer
 import numpy as np
@@ -34,13 +35,13 @@ import csv
 from tools import data
 import keras
 import hashlib
-import time
-from collections import deque
-from constants import POSE_DICT
+from constants import PREDICTION_OUTPUT_DICT, STATE_DICT, FACE_KEYPOINTS, POSE_DICT
 from tools.person import Person
+from state import SystemState
+import time
 
 
-CONFIDENCE = 0.8
+CONFIDENCE_THRESHOLD = 0.8
 model_path = './trainings/training80_4class/model/model80.keras'
 checksum_path = './trainings/training80_4class/model/weights_checksum80.txt'
 
@@ -86,14 +87,143 @@ def model_weights_checksum(model):
     weights_concat = np.concatenate([w.flatten() for w in weights])
     return hashlib.md5(weights_concat).hexdigest()
 
-def display_persons_with_poses(persons, image):
-    image = cv2.imread("blank_image.jpg")  # Replace "blank_image.jpg" with your image filename
-    y = 50
-    for person in persons:
-        image = cv2.putText(image, f"{person.get_id()} - Pose: {POSE_DICT.get(person.get_pose())}", (50, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        y += 50
+def display_tracking_id(image, person_id):
+    # Get the image dimensions
+    height, width, _ = image.shape
+
+    # Prepare the text to be displayed
+    tracking_text = f'TRACKING PERSON {person_id}'
+
+    # Define font settings
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 1
+    font_color = (0, 0, 255)  # Red color in BGR
+    font_thickness = 2
+
+    # Calculate text size to position it at the top center
+    text_size = cv2.getTextSize(tracking_text, font, font_scale, font_thickness)[0]
+    text_x = (width - text_size[0]) // 2
+    text_y = text_size[1] + 50  # Adding some padding from the top
+
+    # Draw the text on the image
+    image = cv2.putText(image, tracking_text, (text_x, text_y), font, font_scale, font_color, font_thickness)
 
     return image
+
+def display_persons_with_poses(persons: Dict, image):
+    y = 40
+    max_time = 4  # Maximum time for the progress bar to reach 100%
+
+    # Calculate the height of the dynamic box
+    box_height = 30 * len(persons) + 20
+    box_y2 = y + box_height
+
+    # Define the box coordinates
+    box_x1 = 30
+    box_y1 = 20
+    box_x2 = 450
+
+    # Create a blurred and darkened version of the box area
+    box_area = image[box_y1:box_y2, box_x1:box_x2]
+    blurred_box_area = cv2.GaussianBlur(box_area, (15, 15), 0)
+    darkened_box_area = cv2.addWeighted(blurred_box_area, 0.4, np.zeros_like(blurred_box_area), 0.6, 0)
+
+    # Replace the area in the original image with the darkened, blurred area
+    image[box_y1:box_y2, box_x1:box_x2] = darkened_box_area
+
+    if len(persons) > 0:
+        for k, v in persons.items():
+            if v.start_time is not None:
+                current_time = time.time()
+                elapsed_time = current_time - v.start_time
+                progress = min(elapsed_time / max_time, 1)  # Ensure the progress doesn't exceed 1 (100%)
+
+                # Convert progress to the width of the progress bar (max width is 100 pixels)
+                progress_width = int(progress * 100)
+
+                # Calculate the remaining time
+                remaining_time = max_time - elapsed_time
+                remaining_time = max(remaining_time, 0)  # Ensure remaining time doesn't go below 0
+
+                # Draw the progress bar
+                progress_bar_start = (250, y - 10)  # Adjust the position as needed
+                progress_bar_end = (250 + progress_width, y + 10)
+                image = cv2.rectangle(image, progress_bar_start, progress_bar_end, (0, 255, 0), -1)  # Filled rectangle for progress
+
+                # Draw the outline of the progress bar
+                image = cv2.rectangle(image, (250, y - 10), (350, y + 10), (255, 255, 255), 1)  # Outline of the progress bar
+
+                # Draw the remaining time text
+                image = cv2.putText(image, f"{remaining_time:.1f}s left", (360, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+            # Draw the person's ID and pose text
+            image = cv2.putText(image, f"{v.id} - Pose: {PREDICTION_OUTPUT_DICT.get(v.pose)}", (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+            y += 30
+    
+    else:
+        image = cv2.putText(image, f"No bodies detected", (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+    return image
+
+def display_system_state(image, system_state):
+    # Get the image dimensions
+    height, width, _ = image.shape
+
+    # Prepare the text to be displayed
+    state_text = f'State: {STATE_DICT[system_state.state]}'
+    focus_text = f'Focus Body ID: {system_state.focus_body_id}'
+
+    # Define font settings
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.5
+    font_color = (255, 255, 255)  # Red color in BGR
+    font_thickness = 1
+
+    # Calculate text size to position it at the bottom right corner
+    state_text_size = cv2.getTextSize(state_text, font, font_scale, font_thickness)[0]
+    focus_text_size = cv2.getTextSize(focus_text, font, font_scale, font_thickness)[0]
+
+    # Set the positions for the text
+    state_text_x = width - state_text_size[0] - 45
+    state_text_y = 50
+    focus_text_x = width - focus_text_size[0] - 45
+    focus_text_y = 75
+
+    # Define the box coordinates
+    box_x1 = min(state_text_x, focus_text_x) - 20
+    box_y1 = min(state_text_y - state_text_size[1], focus_text_y - focus_text_size[1]) - 20
+    box_x2 = width - 20
+    box_y2 = 100
+
+    # Create a blurred and darkened version of the box area
+    box_area = image[box_y1:box_y2, box_x1:box_x2]
+    blurred_box_area = cv2.GaussianBlur(box_area, (15, 15), 0)
+    darkened_box_area = cv2.addWeighted(blurred_box_area, 0.4, np.zeros_like(blurred_box_area), 0.6, 0)
+
+    # Replace the area in the original image with the darkened, blurred area
+    image[box_y1:box_y2, box_x1:box_x2] = darkened_box_area
+
+    # Draw the text on the image
+    image = cv2.putText(image, state_text, (state_text_x, state_text_y), font, font_scale, font_color, font_thickness)
+    image = cv2.putText(image, focus_text, (focus_text_x, focus_text_y), font, font_scale, font_color, font_thickness)
+
+    return image
+
+def clean_persons(bodies, persons: Dict):
+    ids = [body.id for body in bodies.body_list]
+    return {k: v for k, v in persons.items() if k in ids}
+
+def clear_persons_except(id: int, persons: Dict):
+    return {k: v for k, v in persons.items() if k==id}
+
+def infere(body, mlp):
+    keypoints = data.getKeypointsOfInterestFromBodyData(body.keypoint)
+    predictions = mlp.call(keypoints)
+    max_idx = np.argmax(predictions)
+    
+    return max_idx, predictions[0][max_idx]
+
 
 def main():
     print("Running Body Tracking sample ... Press 'q' to quit, or 'm' to pause or restart")
@@ -158,8 +288,8 @@ def main():
     image = sl.Mat()
     key_wait = 10 
 
-    pose = POSE_DICT.get(0)
-    persons = []
+    persons = {}
+    system_state = SystemState()
 
     with open('keypoint_data.csv', 'a', newline='') as csvfile:
         fieldnames = ['Right shoulder', 'Right elbow', 'Left shoulder', 'Left elbow', 'Label']
@@ -173,27 +303,64 @@ def main():
                 zed.retrieve_image(image, sl.VIEW.LEFT, sl.MEM.CPU, display_resolution)
                 # Retrieve bodies
                 zed.retrieve_bodies(bodies, body_runtime_param)
-                for body in bodies.body_list:
-                    person = Person(body.id)
-                    persons.append(person)
-                    keypoints = data.getKeypointsOfInterestFromBodyData(body.keypoint)
-                    predictions = mlp.call(keypoints)
-                    max_idx = np.argmax(predictions)
-                    if predictions[0][max_idx] > CONFIDENCE:
-                        person.add_pose(max_idx)
-                    else:
-                        person.add_pose(0)
- 
                 # Update GL view
                 viewer.update_view(image, bodies) 
                 # Update OCV view
                 image_left_ocv = image.get_data()
                 # Write the text on the image
 
+                persons = clean_persons(bodies, persons)
+
+                if system_state.state != POSE_DICT["T-POSE"]:
+                    if system_state.focus_body_id in persons:
+
+                        display_tracking_id(image_left_ocv, system_state.focus_body_id)
+
+                        prediction, confidence = infere(persons[system_state.focus_body_id].body, mlp)
+
+                        if confidence > CONFIDENCE_THRESHOLD:
+
+                                focused_id = person.add_pose(prediction)
+
+                                if focused_id > -1:
+                                    system_state.set_state(person.pose)
+                                    system_state.set_focus_body_id(focused_id)
+                                    persons = clear_persons_except(focused_id, persons)
+                        
+                    else:
+                        system_state.set_state(POSE_DICT["T-POSE"])
+                    
+                else:
+                    for body in bodies.body_list:
+
+                        if body.id not in persons:
+
+                            persons[body.id] = Person(body.id, body)
+
+                        person = persons[body.id]
+
+                        if not any(np.isnan(body.keypoint[id]).any() for id in FACE_KEYPOINTS):
+
+                            prediction, confidence = infere(body, mlp)
+
+                            if confidence > CONFIDENCE_THRESHOLD:
+
+                                focused_id = person.add_pose(prediction)
+
+                                if focused_id > -1:
+                                    system_state.set_state(person.pose)
+                                    if person.pose != 1:
+                                        system_state.set_focus_body_id(focused_id)
+                                        persons = clear_persons_except(focused_id, persons)
+                            
+                        else:
+                            persons[body.id].add_pose(POSE_DICT["NO POSE"])
+
                 display_persons_with_poses(persons, image_left_ocv)
+                display_system_state(image_left_ocv, system_state)
 
                 cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
-                # cv2.putText(image_left_ocv, POSE_DICT[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                # cv2.putText(image_left_ocv, PREDICTION_OUTPUT_DICT, POSE_DICT[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
                 cv2.imshow("ZED | 2D View", image_left_ocv)
                 key = cv2.waitKey(key_wait)
                 if key == 113: # for 'q' key
