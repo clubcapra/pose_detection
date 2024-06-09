@@ -87,29 +87,6 @@ def model_weights_checksum(model):
     weights_concat = np.concatenate([w.flatten() for w in weights])
     return hashlib.md5(weights_concat).hexdigest()
 
-def display_tracking_id(image, person_id):
-    # Get the image dimensions
-    height, width, _ = image.shape
-
-    # Prepare the text to be displayed
-    tracking_text = f'TRACKING PERSON {person_id}'
-
-    # Define font settings
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 1
-    font_color = (0, 0, 255)  # Red color in BGR
-    font_thickness = 2
-
-    # Calculate text size to position it at the top center
-    text_size = cv2.getTextSize(tracking_text, font, font_scale, font_thickness)[0]
-    text_x = (width - text_size[0]) // 2
-    text_y = text_size[1] + 50  # Adding some padding from the top
-
-    # Draw the text on the image
-    image = cv2.putText(image, tracking_text, (text_x, text_y), font, font_scale, font_color, font_thickness)
-
-    return image
-
 def display_persons_with_poses(persons: Dict, image):
     y = 40
     max_time = 4  # Maximum time for the progress bar to reach 100%
@@ -131,6 +108,9 @@ def display_persons_with_poses(persons: Dict, image):
     # Replace the area in the original image with the darkened, blurred area
     image[box_y1:box_y2, box_x1:box_x2] = darkened_box_area
 
+    regular_color = (0, 255, 0)
+    focused_color = (0, 0, 255)
+
     if len(persons) > 0:
         for k, v in persons.items():
             if v.start_time is not None:
@@ -148,16 +128,16 @@ def display_persons_with_poses(persons: Dict, image):
                 # Draw the progress bar
                 progress_bar_start = (250, y - 10)  # Adjust the position as needed
                 progress_bar_end = (250 + progress_width, y + 10)
-                image = cv2.rectangle(image, progress_bar_start, progress_bar_end, (0, 255, 0), -1)  # Filled rectangle for progress
+                image = cv2.rectangle(image, progress_bar_start, progress_bar_end, focused_color if v.focus else regular_color , -1)  # Filled rectangle for progress
 
                 # Draw the outline of the progress bar
                 image = cv2.rectangle(image, (250, y - 10), (350, y + 10), (255, 255, 255), 1)  # Outline of the progress bar
 
                 # Draw the remaining time text
-                image = cv2.putText(image, f"{remaining_time:.1f}s left", (360, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                image = cv2.putText(image, f"{remaining_time:.1f}s left", (360, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, focused_color if v.focus else regular_color, 1)
 
             # Draw the person's ID and pose text
-            image = cv2.putText(image, f"{v.id} - Pose: {PREDICTION_OUTPUT_DICT.get(v.pose)}", (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+            image = cv2.putText(image, f"{v.id} - Pose: {PREDICTION_OUTPUT_DICT.get(v.pose)}", (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, focused_color if v.focus else regular_color, 1)
 
             y += 30
     
@@ -223,6 +203,18 @@ def infere(body, mlp):
     max_idx = np.argmax(predictions)
     
     return max_idx, predictions[0][max_idx]
+
+def draw_2d_bounding_box(image, bounding_box, scale):
+
+    pt1 = cv_viewer.cvt(bounding_box[0], scale)
+    pt2 = cv_viewer.cvt(bounding_box[2], scale)
+
+    pt1 = np.array(pt1, dtype=np.int32)
+    pt2 = np.array(pt2, dtype=np.int32)
+
+    image = cv2.rectangle(image, pt1, pt2, (0, 0, 255), 2)  # Red color for the box edges
+
+    return image
 
 
 def main():
@@ -314,28 +306,42 @@ def main():
                 if system_state.state != POSE_DICT["T-POSE"]:
                     if system_state.focus_body_id in persons:
 
-                        display_tracking_id(image_left_ocv, system_state.focus_body_id)
+                        person = persons[system_state.focus_body_id]
+                        body = sl.BodyData()
+                        bodies.get_body_data_from_id(body, system_state.focus_body_id)
 
-                        prediction, confidence = infere(persons[system_state.focus_body_id].body, mlp)
+                        # image_left_ocv = display_tracking_id(image_left_ocv, system_state.focus_body_id)
+                        bounding_box = body.bounding_box_2d
+                        image_left_ocv = draw_2d_bounding_box(image_left_ocv, bounding_box, image_scale)
 
-                        if confidence > CONFIDENCE_THRESHOLD:
+                        if not any(np.isnan(body.keypoint[id]).any() for id in FACE_KEYPOINTS):
 
-                                focused_id = person.add_pose(prediction)
+                            prediction, confidence = infere(body, mlp)
 
-                                if focused_id > -1:
-                                    system_state.set_state(person.pose)
-                                    system_state.set_focus_body_id(focused_id)
-                                    persons = clear_persons_except(focused_id, persons)
+                            if confidence > CONFIDENCE_THRESHOLD:
+
+                                    focused_id = person.add_pose(prediction)
+
+                                    if focused_id > -1:
+                                        system_state.set_state(person.pose)
+                                        if person.pose not in [0,1]:
+                                            # This will only happen if pose is 2 or 3 (FOLLOW or RETRACE)
+                                            system_state.set_focus_body_id(focused_id)                                        
+                                        else:
+                                            system_state.set_focus_body_id(None)
+
+                                        person.add_pose(0)
                         
                     else:
                         system_state.set_state(POSE_DICT["T-POSE"])
+                        system_state.set_focus_body_id(None)
                     
                 else:
                     for body in bodies.body_list:
 
                         if body.id not in persons:
 
-                            persons[body.id] = Person(body.id, body)
+                            persons[body.id] = Person(body.id)
 
                         person = persons[body.id]
 
@@ -351,13 +357,13 @@ def main():
                                     system_state.set_state(person.pose)
                                     if person.pose != 1:
                                         system_state.set_focus_body_id(focused_id)
-                                        persons = clear_persons_except(focused_id, persons)
+                                    person.add_pose(0)
                             
                         else:
                             persons[body.id].add_pose(POSE_DICT["NO POSE"])
 
-                display_persons_with_poses(persons, image_left_ocv)
-                display_system_state(image_left_ocv, system_state)
+                image_left_ocv = display_persons_with_poses(persons, image_left_ocv)
+                image_left_ocv = display_system_state(image_left_ocv, system_state)
 
                 cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
                 # cv2.putText(image_left_ocv, PREDICTION_OUTPUT_DICT, POSE_DICT[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)

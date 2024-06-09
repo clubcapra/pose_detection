@@ -1,12 +1,11 @@
 from time import time
 
 class Person():
-    def __init__(self, id, body):
+    def __init__(self, id):
         self.pose = 0
         self.start_time = None
         self.focus = False
         self.id = id
-        self.body = body
 
     def add_pose(self, pose_id):
         # If person already has an associated pose
@@ -20,13 +19,16 @@ class Person():
             else:
                 # Calculate how long the pose has been being detected for
                 elapsed_time = time() - self.start_time
-                print(elapsed_time)
                 # If time is greater than threshold
                 if elapsed_time > 4:
-                    # We set the focus on the person
-                    self.focus = True
-                    # And return the ID for main()
-                    return self.id 
+                    if pose_id not in [0, 1]:
+                        # We set the focus on the person
+                        self.focus = True
+                        # And return the ID for main()
+                    else:
+                        self.focus = False
+                        
+                    return self.id
         # If person does not have an associated pose
         elif pose_id != 0:
             # Take not of start time of pose
