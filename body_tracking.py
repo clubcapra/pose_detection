@@ -42,8 +42,8 @@ import time
 
 
 CONFIDENCE_THRESHOLD = 0.8
-model_path = './trainings/training80_4class/model/model80.keras'
-checksum_path = './trainings/training80_4class/model/weights_checksum80.txt'
+model_path = './trainings/training19/model/model19.keras'
+checksum_path = './trainings/training19/model/weights_checksum19.txt'
 
 def parse_args(init):
     if len(opt.input_svo_file)>0 and opt.input_svo_file.endswith(".svo"):
