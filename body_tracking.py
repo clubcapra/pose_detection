@@ -282,103 +282,94 @@ def main():
 
     persons = {}
     system_state = SystemState()
-
-    with open('keypoint_data.csv', 'a', newline='') as csvfile:
-        fieldnames = ['Right shoulder', 'Right elbow', 'Left shoulder', 'Left elbow', 'Label']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
     
-        while viewer.is_available():
-            # Grab an image
-            if zed.grab() == sl.ERROR_CODE.SUCCESS:
-                # Retrieve left image
-                zed.retrieve_image(image, sl.VIEW.LEFT, sl.MEM.CPU, display_resolution)
-                # Retrieve bodies
-                zed.retrieve_bodies(bodies, body_runtime_param)
-                # Update GL view
-                viewer.update_view(image, bodies) 
-                # Update OCV view
-                image_left_ocv = image.get_data()
-                # Write the text on the image
+    while viewer.is_available():
+        # Grab an image
+        if zed.grab() == sl.ERROR_CODE.SUCCESS:
+            # Retrieve left image
+            zed.retrieve_image(image, sl.VIEW.LEFT, sl.MEM.CPU, display_resolution)
+            # Retrieve bodies
+            zed.retrieve_bodies(bodies, body_runtime_param)
+            # Update GL view
+            viewer.update_view(image, bodies) 
+            # Update OCV view
+            image_left_ocv = image.get_data()
 
-                persons = clean_persons(bodies, persons)
+            persons = clean_persons(bodies, persons)
 
-                if system_state.state != POSE_DICT["T-POSE"]:
-                    if system_state.focus_body_id in persons:
+            if system_state.state != POSE_DICT["T-POSE"]:
+                if system_state.focus_body_id in persons:
 
-                        person = persons[system_state.focus_body_id]
-                        body = sl.BodyData()
-                        bodies.get_body_data_from_id(body, system_state.focus_body_id)
+                    person = persons[system_state.focus_body_id]
+                    body = sl.BodyData()
+                    bodies.get_body_data_from_id(body, system_state.focus_body_id)
 
-                        # image_left_ocv = display_tracking_id(image_left_ocv, system_state.focus_body_id)
-                        bounding_box = body.bounding_box_2d
-                        image_left_ocv = draw_2d_bounding_box(image_left_ocv, bounding_box, image_scale)
+                    bounding_box = body.bounding_box_2d
+                    image_left_ocv = draw_2d_bounding_box(image_left_ocv, bounding_box, image_scale)
 
-                        if not any(np.isnan(body.keypoint[id]).any() for id in FACE_KEYPOINTS):
+                    if not any(np.isnan(body.keypoint[id]).any() for id in FACE_KEYPOINTS):
 
-                            prediction, confidence = infere(body, mlp)
+                        prediction, confidence = infere(body, mlp)
 
-                            if confidence > CONFIDENCE_THRESHOLD:
-
-                                    focused_id = person.add_pose(prediction)
-
-                                    if focused_id > -1:
-                                        system_state.set_state(person.pose)
-                                        if person.pose not in [0,1]:
-                                            # This will only happen if pose is 2 or 3 (FOLLOW or RETRACE)
-                                            system_state.set_focus_body_id(focused_id)                                        
-                                        else:
-                                            system_state.set_focus_body_id(None)
-
-                                        person.add_pose(0)
-                        
-                    else:
-                        system_state.set_state(POSE_DICT["T-POSE"])
-                        system_state.set_focus_body_id(None)
-                    
-                else:
-                    for body in bodies.body_list:
-
-                        if body.id not in persons:
-
-                            persons[body.id] = Person(body.id)
-
-                        person = persons[body.id]
-
-                        if not any(np.isnan(body.keypoint[id]).any() for id in FACE_KEYPOINTS):
-
-                            prediction, confidence = infere(body, mlp)
-
-                            if confidence > CONFIDENCE_THRESHOLD:
+                        if confidence > CONFIDENCE_THRESHOLD:
 
                                 focused_id = person.add_pose(prediction)
 
                                 if focused_id > -1:
                                     system_state.set_state(person.pose)
-                                    if person.pose != 1:
-                                        system_state.set_focus_body_id(focused_id)
+                                    if person.pose not in [0,1]:
+                                        system_state.set_focus_body_id(focused_id)                                        
+                                    else:
+                                        system_state.set_focus_body_id(None)
+
                                     person.add_pose(0)
-                            
-                        else:
-                            persons[body.id].add_pose(POSE_DICT["NO POSE"])
+                    
+                else:
+                    system_state.set_state(POSE_DICT["T-POSE"])
+                    system_state.set_focus_body_id(None)
+                
+            else:
+                for body in bodies.body_list:
 
-                image_left_ocv = display_persons_with_poses(persons, image_left_ocv)
-                image_left_ocv = display_system_state(image_left_ocv, system_state)
+                    if body.id not in persons:
 
-                cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
-                # cv2.putText(image_left_ocv, PREDICTION_OUTPUT_DICT, POSE_DICT[pose], (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-                cv2.imshow("ZED | 2D View", image_left_ocv)
-                key = cv2.waitKey(key_wait)
-                if key == 113: # for 'q' key
-                    print("Exiting...")
-                    break
-                if key == 109: # for 'm' key
-                    if (key_wait>0):
-                        print("Pause")
-                        key_wait = 0 
-                    else : 
-                        print("Restart")
-                        key_wait = 10
+                        persons[body.id] = Person(body.id)
+
+                    person = persons[body.id]
+
+                    if not any(np.isnan(body.keypoint[id]).any() for id in FACE_KEYPOINTS):
+
+                        prediction, confidence = infere(body, mlp)
+
+                        if confidence > CONFIDENCE_THRESHOLD:
+
+                            focused_id = person.add_pose(prediction)
+
+                            if focused_id > -1:
+                                system_state.set_state(person.pose)
+                                if person.pose != 1:
+                                    system_state.set_focus_body_id(focused_id)
+                                person.add_pose(0)
+                        
+                    else:
+                        persons[body.id].add_pose(POSE_DICT["NO POSE"])
+
+            image_left_ocv = display_persons_with_poses(persons, image_left_ocv)
+            image_left_ocv = display_system_state(image_left_ocv, system_state)
+
+            cv_viewer.render_2D(image_left_ocv,image_scale, bodies.body_list, body_param.enable_tracking, body_param.body_format)
+            cv2.imshow("Club Capra | Detection de pose", image_left_ocv)
+            key = cv2.waitKey(key_wait)
+            if key == 113: # for 'q' key
+                print("Exiting...")
+                break
+            if key == 109: # for 'm' key
+                if (key_wait>0):
+                    print("Pause")
+                    key_wait = 0 
+                else : 
+                    print("Restart")
+                    key_wait = 10
 
     
     viewer.exit()
