@@ -138,7 +138,7 @@ if __name__ == "__main__":
                 skeleton_file_data[str(bodies.timestamp.get_milliseconds())] = serializeBodies(bodies)
                 viewer.update_bodies(bodies)
                 if first:
-                    endTime = time.time() + 20
+                    endTime = time.time() + 10
                     first = False
             
             if not first and time.time() > endTime:
