@@ -1,8 +1,3 @@
-VECTOR_COUPLES = [[0, 1],
-                [1, 2],
-                [3, 4],
-                [4, 5]]
-
 KEYPOINT_COUPLES = [[1, 2],
                     [2, 3],
                     [3, 4],
@@ -13,14 +8,6 @@ KEYPOINT_COUPLES = [[1, 2],
 KEYPOINT_OF_INTEREST = [1, 2, 3, 4, 5, 6, 7]
 
 FACE_KEYPOINTS = [0, 14, 15]
-
-ERROR_MARGIN = 30
-
-TPOSE_ANGLES = [0, 10, 0, 10]
-
-SKYWARD_ANGLES = [90, 0, 90, 0]
-
-BUCKET_ANGLES = [0, 105, 0, 105]
 
 DATASET_PATH = "./dataset"
 
@@ -43,3 +30,6 @@ STATE_DICT = {
     POSE_DICT["BUCKET"]: 'FOLLOW',
     POSE_DICT["SKYWARD"]: 'RETRACE'
 }
+
+MODEL_PATH = './trainings/training19/model/model19.keras'
+CHECKSUM_PATH = './trainings/training19/model/weights_checksum19.txt'
