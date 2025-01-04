@@ -49,7 +49,6 @@ def balanceDataset(X, y):
   for label in unique:
     indexes = np.flatnonzero(y == label)
     indexesToRemove = indexes[minCount:]
-    print("x shape before balancing:", X.shape)
     X = np.delete(X, indexesToRemove, axis=0)
     y = np.delete(y, indexesToRemove)
 
