@@ -1,6 +1,7 @@
 from typing import Collection
 import numpy as np
 from constants import KEYPOINT_OF_INTEREST
+import torch
 
 def convertToOneHot(y, nb_outputs, pose_dict):
   oh_y = np.zeros((y.shape[0], nb_outputs))
@@ -9,7 +10,7 @@ def convertToOneHot(y, nb_outputs, pose_dict):
     index = pose_dict[y[i]]
     oh_y[i][index] = 1
 
-  return oh_y
+  return torch.FloatTensor(oh_y)
 
 def convertLabelsToInt(y, pose_dict):
   y_int = np.zeros_like(y, dtype=int)
